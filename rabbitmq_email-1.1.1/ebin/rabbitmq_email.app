@@ -1,0 +1,46 @@
+%
+% This Source Code Form is subject to the terms of the Mozilla Public
+% License, v. 2.0. If a copy of the MPL was not distributed with this
+% file, You can obtain one at http://mozilla.org/MPL/2.0/.
+%
+% Copyright (C) 2014-2015 Petr Gotthard <petr.gotthard@centrum.cz>
+% Copyright (C) 2017 Pivotal Software, Inc.
+%
+
+{application, rabbitmq_email,
+    [{description, " E-mail gateway for AMQP 0-9-1"},
+    {vsn, "1.1.1"},
+    {modules, ['rabbit_email_filter','rabbit_email_handler','rabbit_email_sender','rabbit_message_handler','rabbit_message_handler_sup','rabbit_message_sender','rabbitmq_email_app']},
+    {registered, []},
+    {mod, {rabbitmq_email_app, []}},
+    {env, [
+        % email to amqp configuration
+        {server_config, [
+            {port, 2525}, {protocol, tcp}, {domain, "example.com"}, {address,{0,0,0,0}}
+        ]},
+        {server_auth, rabbitmq},
+        {server_starttls, false},
+        {server_maxsize, 10485760}, % 10MiB
+        {email_domains,
+            [{<<"example.com">>, {<<"/">>, <<"email-in">>}}
+        ]},
+        {email_headers, ["subject", "from", "charset"]},
+        {email_filter, [
+            {<<"text">>, <<"plain">>},
+            {<<"text">>, undefined},
+            {<<"image">>, undefined},
+            {undefined, undefined}
+        ]},
+        % amqp to email configuration
+        {email_queues,
+            [{{<<"/">>, <<"email-out">>}, <<"example.com">>}
+        ]},
+        {email_from, <<"noreply">>},
+        {client_sender, "noreply@example.com"},
+        {client_config, [
+            {relay, "smtp.example.com"}
+        ]}
+    ]},
+    {applications, [kernel, stdlib, rabbit, amqp_client, gen_smtp]}]}.
+
+% end of file
